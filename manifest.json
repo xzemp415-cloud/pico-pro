@@ -1,0 +1,15 @@
+{
+  "short_name": "Pico",
+  "name": "Pico Game",
+  "display": "standalone",
+  "start_url": "index.html",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/v4F0RRKS/IMG-4539.jpg",
+      "sizes": "192x192",
+      "type": "image/jpg"
+    }
+  ]
+}
