@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>pico pro engine</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://i.ibb.co/v4F0RRKS/IMG-4539.jpg">
+
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; }
+        .sc { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; z-index: 10; }
+        
+        /* центрирование скина и меню */
+        #menu-sc { display: flex; justify-content: space-between; align-items: center; }
+        .bg { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: -1; opacity: 0.6; }
+        
+        .skin-container { 
+            display: flex; flex-direction: column; align-items: center; 
+            font-size: 50px; line-height: 1.1; margin-top: 20px;
+        }
+
+        .top-bar { 
+            position: absolute; top: 0; width: 100%; padding: 15px; 
+            display: flex; justify-content: space-between; z-index: 20; 
+        }
+        .p-info { background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 10px; border: 1px solid #444; }
+        
+        /* кнопки по бокам */
+        .side-menu { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; }
+        .btn-sq { 
+            width: 70px; height: 70px; background: #222; border: 2px solid #0055ff; 
+            border-radius: 15px; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: bold; text-align: center; color: gold;
+        }
+
+        /* нижняя панель */
+        .bottom-bar { position: absolute; bottom: 30px; width: 90%; display: flex; gap: 10px; }
+        .play-btn { 
+            flex: 2; background: #ffea00; color: #000; border-radius: 40px; 
+            font-size: 24px; font-weight: bold; padding: 15px; text-align: center; border: 4px solid #fff;
+        }
+        .mode-btn { 
+            flex: 1; background: #0055ff; border-radius: 40px; 
+            font-size: 14px; padding: 15px; text-align: center; border: 3px solid #fff;
+        }
+
+        /* магазин */
+        .modal { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            background: #111; border: 2px solid #0055ff; width: 80%; border-radius: 20px; 
+            padding: 20px; display: none; z-index: 100; 
+        }
+        
+        /* игра */
+        canvas { display: block; width: 100%; height: 100%; }
+        .j { position: absolute; bottom: 50px; width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid #fff; }
+    </style>
+</head>
+<body>
+
+    <div id="nick-sc" class="sc" style="display:flex; background:#000; justify-content:center;">
+        <div style="background:#111; padding:30px; border-radius:20px; border:2px solid #0055ff; width:80%; text-align:center;">
+            <h2>pico engine pro</h2>
+            <input type="text" id="nick-in" placeholder="твой ник" style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px;">
+            <button onclick="login()" style="width:100%; padding:12px; background:#0f0; border:none; border-radius:10px; font-weight:bold;">начать</button>
+        </div>
+    </div>
+
+    <div id="menu-sc" class="sc">
+        <img src="https://i.ibb.co/DJsfqdJ/IMG-1949.jpg" class="bg">
+        <div class="top-bar">
+            <div class="p-info" id="p-nick">pico</div>
+            <div style="display:flex; gap:10px;">
+                <div class="p-info">🟡 <span id="coins">100</span></div>
+                <div class="p-info">💎 <span id="gems">20</span></div>
+            </div>
+        </div>
+
+        <div class="side-menu">
+            <div class="btn-sq" onclick="openShop()">МАГАЗИН</div>
+        </div>
+
+        <div class="skin-container">
+            <div>😀</div>
+            <div>🚹</div>
+            <div style="margin-top:-5px;">🦵🏾🦵🏾</div>
+        </div>
+
+        <div class="bottom-bar">
+            <div class="mode-btn" id="mode-tx">одиночное</div>
+            <div class="play-btn" onclick="startMatch()">ИГРАТЬ</div>
+        </div>
+    </div>
+
+    <div id="shop-mdl" class="modal">
+        <h2 style="color:gold; text-align:center;">МАГАЗИН</h2>
+        <div style="padding:15px; background:#222; border-radius:10px; display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span>10 💎 за 20 🟡</span>
+            <button onclick="buyGems()" style="background:gold; border:none; border-radius:5px; padding:5px 10px;">купить</button>
+        </div>
+        <button onclick="closeShop()" style="width:100%; padding:10px; margin-top:10px; border-radius:10px;">закрыть</button>
+    </div>
+
+    <div id="match-sc" class="sc" style="background:linear-gradient(to bottom, #a430ff, #4a00e0); justify-content:center; text-align:center;">
+        <h1 style="font-size:40px;">ПОДБОР...</h1>
+        <div style="font-size:60px;" id="match-count">0 / 2</div>
+    </div>
+
+    <div id="game-sc" class="sc">
+        <canvas id="stage"></canvas>
+        <div id="j-l" class="j" style="left:30px;"></div>
+        <div id="j-r" class="j" style="right:30px; border-color:#f00;"></div>
+    </div>
+
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+<script>
+[span_1](start_span)// Данные из твоего plist[span_1](end_span)
+const firebaseConfig = {
+    apiKey: "AIzaSyAqVnAGWpLJKWYoyMoqdyVg22Ks4U2Bq-0",
+    projectId: "pico-server-pro",
+    databaseURL: "https://pico-server-pro-default-rtdb.firebaseio.com",
+    appId: "1:1066461989698:ios:58db1a5166b9c6dd9416db"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let player = { nick: "pico", coins: 100, gems: 20 };
+let playing = false;
+
+function login() {
+    const n = document.getElementById('nick-in').value || "pico";
+    player.nick = n;
+    document.getElementById('p-nick').innerText = n;
+    document.getElementById('nick-sc').style.display = 'none';
+    document.getElementById('menu-sc').style.display = 'flex';
+}
+
+function openShop() { document.getElementById('shop-mdl').style.display = 'block'; }
+function closeShop() { document.getElementById('shop-mdl').style.display = 'none'; }
+
+function buyGems() {
+    if(player.coins >= 20) {
+        player.coins -= 20;
+        player.gems += 10;
+        document.getElementById('coins').innerText = player.coins;
+        document.getElementById('gems').innerText = player.gems;
+        alert("куплено! 💎");
+    }
+}
+
+function startMatch() {
+    document.getElementById('menu-sc').style.display = 'none';
+    document.getElementById('match-sc').style.display = 'flex';
+    
+    const qRef = db.ref('matchmaking/queue/' + player.nick);
+    qRef.set({ n: player.nick, t: Date.now() });
+
+    db.ref('matchmaking/queue').on('value', (s) => {
+        const keys = Object.keys(s.val() || {});
+        document.getElementById('match-count').innerText = keys.length + " / 2";
+        if(keys.length >= 2) {
+            setTimeout(() => {
+                qRef.remove();
+                db.ref('matchmaking/queue').off();
+                startGame();
+            }, 1000);
+        }
+    });
+}
+
+function startGame() {
+    document.querySelectorAll('.sc').forEach(s => s.style.display = 'none');
+    document.getElementById('game-sc').style.display = 'flex';
+    playing = true;
+    // тут твоя плавная отрисовка canvas
+}
+</script>
+</body>
+</html>
