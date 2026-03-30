@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <title>Bottle Flip 2026</title>
+    <meta name="apple-mobile-web-app-title" content="BottleFlip"> <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Bottle Flip 2026">
+    
+    <link rel="apple-touch-icon" href="https://i.ibb.co/bMSVRPFZ/copy-BBBD0921-96-CE-4824-ACE6-CB12-D74-A224-B.jpg">
+    <link rel="icon" type="image/jpg" href="https://i.ibb.co/bMSVRPFZ/copy-BBBD0921-96-CE-4824-ACE6-CB12-D74-A224-B.jpg">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        * { -webkit-tap-highlight-color: transparent; user-select: none; touch-action: none; box-sizing: border-box; }
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; background: #000; color: white; 
+            font-family: 'Orbitron', sans-serif; position: fixed;
+        }
+
+        .screen { 
+            display: none; width: 100vw; height: 100vh; 
+            position: absolute; flex-direction: column; align-items: center; justify-content: center; 
+            background-size: cover; background-position: center; 
+        }
+        .active { display: flex !important; }
+
+        /* 1. ЗАГРУЗКА */
+        #loading-screen { background-image: url('https://i.ibb.co/jvBPTLXp/IMG-4177.jpg'); z-index: 500; }
+        .loader-container { position: absolute; bottom: 15%; width: 80%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; border: 1px solid #ffd700; }
+        #loader-bar { width: 0%; height: 100%; background: #ffd700; animation: loadAnim 10s linear forwards; }
+        @keyframes loadAnim { from { width: 0%; } to { width: 100%; } }
+
+        /* 2. НИКНЕЙМ */
+        #nickname-screen { background: #000; z-index: 400; }
+        .nick-box { background: #111; padding: 30px; border: 2px solid #ffd700; border-radius: 20px; text-align: center; width: 80%; }
+        input { padding: 12px; margin: 20px 0; border-radius: 10px; border: none; text-align: center; font-family: sans-serif; width: 100%; background: #222; color: #fff; }
+
+        /* 3. МЕНЮ */
+        #menu-screen { background-image: url('https://i.ibb.co/844Cn9dP/IMG-4684.jpg'); z-index: 100; }
+        .stats { position: absolute; top: 60px; left: 20px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 15px; border-left: 5px solid #ffd700; }
+
+        /* 4. МАГАЗИН */
+        #shop-screen { background: #0a0a0a; z-index: 300; justify-content: flex-start; padding-top: 20px; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; width: 100%; }
+        .shop-item { background: #1a1a1a; padding: 15px; border-radius: 15px; border: 1px solid #333; text-align: center; }
+        .shop-item img { width: 50px; height: 50px; margin-bottom: 10px; }
+
+        /* 5. ИГРА */
+        #game-screen { background: #000; z-index: 50; }
+        #counter { position: absolute; top: 60px; right: 30px; color: #00ff00; font-size: 4rem; z-index: 10; text-shadow: 0 0 20px #00ff00; }
+        #game-img { width: 100%; height: 100%; object-fit: cover; position: absolute; }
+        #boom { display: none; position: absolute; font-size: 10rem; z-index: 20; animation: blast 0.5s ease-out; }
+        @keyframes blast { 0% { transform: scale(0.5); opacity: 0; } 50% { opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+
+        .btn { background: rgba(0,0,0,0.8); color: #fff; border: 3px solid #fffb00; padding: 15px 40px; border-radius: 50px; font-size: 1.5rem; font-family: 'Orbitron'; margin: 10px; box-shadow: 0 0 15px #fffb00; cursor: pointer; }
+        .close-btn { background: #ff4444; border: none; padding: 15px; width: 90%; border-radius: 15px; color: #fff; font-family: 'Orbitron'; font-weight: bold; margin-top: 20px; cursor: pointer; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <div id="loading-screen" class="screen active">
+        <div class="loader-container"><div id="loader-bar"></div></div>
+    </div>
+
+    <div id="nickname-screen" class="screen">
+        <div class="nick-box">
+            <h2 style="color:#ffd700">ВВЕДИТЕ НИК</h2>
+            <input type="text" id="nick-input" placeholder="...">
+            <button class="btn" style="font-size: 1rem;" onclick="saveNick()">НАЧАТЬ</button>
+        </div>
+    </div>
+
+    <div id="menu-screen" class="screen">
+        <div class="stats">
+            <span id="player-name" style="color:#ffd700; font-weight: bold;">...</span><br>
+            🪙: <span id="coins-ui">0</span> | 🍾: <span id="caps-ui">0</span>
+        </div>
+        <button class="btn" onclick="startGame()">ИГРАТЬ</button>
+        <button class="btn" style="border-color:#00fbff; box-shadow: 0 0 15px #00fbff; font-size: 1.2rem;" onclick="toggleShop(true)">МАГАЗИН</button>
+    </div>
+
+    <div id="shop-screen" class="screen">
+        <h2 style="color:#ffd700">МАРКЕТ</h2>
+        <div style="background: #222; padding: 10px; width: 90%; border-radius: 10px; text-align: center; margin-bottom: 10px;">
+            БАЛАНС: 🪙 <span id="s-coins">0</span> | 🍾 <span id="s-caps">0</span>
+        </div>
+        <div class="shop-grid">
+            <div class="shop-item">
+                <img src="https://cdn-icons-png.flaticon.com/512/3124/3124112.png">
+                <div style="font-size:0.6rem">VIP БУТЫЛКА</div>
+                <button style="background:#ffd700; border:none; margin-top:5px; border-radius:5px; width: 100%;">500 🍾</button>
+            </div>
+            <div class="shop-item">
+                <img src="https://cdn-icons-png.flaticon.com/512/1162/1162153.png">
+                <div style="font-size:0.6rem">ПРОМОКОД</div>
+                <button onclick="applyPromo()" style="background:#00fbff; border:none; margin-top:5px; border-radius:5px; width: 100%;">ВВОД</button>
+            </div>
+        </div>
+        <button class="close-btn" onclick="toggleShop(false)">ЗАКРЫТЬ [X]</button>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div id="counter">0/5</div>
+        <div id="boom">💥</div>
+        <img id="game-img" src="https://i.ibb.co/nsvmZN7s/IMG-4687.jpg">
+    </div>
+
+    <script>
+        let score = 0;
+        let coins = parseInt(localStorage.getItem('b_coins')) || 0;
+        let caps = parseInt(localStorage.getItem('b_caps')) || 0;
+        let startY, startTime;
+
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('loading-screen').classList.remove('active');
+                if (localStorage.getItem('bottle_nick')) showMenu();
+                else document.getElementById('nickname-screen').classList.add('active');
+            }, 10000);
+        };
+
+        function saveNick() {
+            let n = document.getElementById('nick-input').value.trim();
+            if(n) { localStorage.setItem('bottle_nick', n); showMenu(); }
+        }
+
+        function showMenu() {
+            document.getElementById('nickname-screen').classList.remove('active');
+            document.getElementById('menu-screen').classList.add('active');
+            document.getElementById('player-name').innerText = "ACC: " + localStorage.getItem('bottle_nick');
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('coins-ui').innerText = coins;
+            document.getElementById('caps-ui').innerText = caps;
+            document.getElementById('s-coins').innerText = coins;
+            document.getElementById('s-caps').innerText = caps;
+        }
+
+        function toggleShop(show) {
+            updateUI();
+            document.getElementById('shop-screen').classList.toggle('active', show);
+        }
+
+        function applyPromo() {
+            let p = prompt("Введите промокод:");
+            if(!p) return;
+            
+            let code = p.trim();
+            if(code === 'BetaButelochka') {
+                caps += 200;
+                alert("Успех! Получено 200 🍾");
+            } else if(code === 'mateo') {
+                coins += 150;
+                alert("Успех! Получено 150 🪙");
+            } else if(code.toUpperCase() === 'BOTTLE') {
+                coins += 100;
+                alert("Старый код! +100 🪙");
+            } else {
+                alert("Неверный код!");
+                return;
+            }
+            
+            localStorage.setItem('b_coins', coins);
+            localStorage.setItem('b_caps', caps);
+            updateUI();
+        }
+
+        function startGame() {
+            score = 0;
+            document.getElementById('counter').innerText = "0/5";
+            document.getElementById('game-img').src = "https://i.ibb.co/nsvmZN7s/IMG-4687.jpg";
+            document.getElementById('menu-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+        }
+
+        const gameZone = document.getElementById('game-screen');
+        gameZone.addEventListener('touchstart', e => { startY = e.touches[0].clientY; startTime = Date.now(); });
+        gameZone.addEventListener('touchend', e => {
+            let dist = startY - e.changedTouches[0].clientY;
+            let time = Date.now() - startTime;
+            if (dist > 60) {
+                if (time > 700) handleWin(); else handleLose();
+            }
+        });
+
+        function handleWin() {
+            score++;
+            document.getElementById('counter').innerText = score + "/5";
+            document.getElementById('boom').style.display = 'block';
+            setTimeout(() => document.getElementById('boom').style.display = 'none', 500);
+
+            if (score === 1 || score === 2) {
+                document.getElementById('game-img').src = "https://i.ibb.co/wFzjhB0m/image.jpg"; 
+            } else if (score === 3) {
+                document.getElementById('game-img').src = "https://i.ibb.co/nsvmZN7s/IMG-4687.jpg"; 
+            }
+
+            if (score >= 5) {
+                setTimeout(() => {
+                    coins += 20; caps += 40;
+                    localStorage.setItem('b_coins', coins);
+                    localStorage.setItem('b_caps', caps);
+                    alert("УРОВЕНЬ ПРОЙДЕН! +20🪙 +40🍾");
+                    document.getElementById('game-screen').classList.remove('active');
+                    showMenu(); 
+                }, 800);
+            }
+        }
+
+        function handleLose() {
+            document.getElementById('game-img').src = "https://i.ibb.co/rBLp9Yg/image.jpg";
+            setTimeout(() => {
+                alert("БУТЫЛКА УПАЛА!");
+                document.getElementById('game-screen').classList.remove('active');
+                showMenu();
+            }, 400);
+        }
+
+        document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+    </script>
+</body>
+</html>
