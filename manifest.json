@@ -1,0 +1,23 @@
+{
+  "name": "pico pro engine",
+  "short_name": "pico pro",
+  "description": "neon battle pwa engine",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#00f2ff",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/DJsfqdJ/IMG-1949.jpg",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.ibb.co/DJsfqdJ/IMG-1949.jpg",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
