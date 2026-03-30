@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PICO ENGINE: PRO EDITION</title>
+    <style>
+        /* БЛОКИРОВКА СКРОЛЛА САЙТА */
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; /* Запрет скролла */
+            position: fixed; 
+            touch-action: none; /* Запрет жестов браузера */
+            background: #000;
+            color: #fff;
+            font-family: sans-serif;
+            -webkit-user-select: none; /* Запрет выделения текста для чистоты игры */
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        
+        .sc { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; z-index: 10; }
+        #nick-sc { display: flex; background: #000; justify-content: center; align-items: center; }
+        #game-sc { background: #050505; }
+        #menu-sc { background: #000; }
+
+        .n-box { background: #111; padding: 30px; border-radius: 15px; border: 2px solid #00f2ff; box-shadow: 0 0 15px #00f2ff; display: flex; flex-direction: column; gap: 15px; }
+        input { padding: 12px; border-radius: 8px; border: 1px solid #ff00de; font-size: 18px; text-align: center; background: #222; color: #fff; box-shadow: inset 0 0 5px #ff00de; }
+        
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+        
+        .hud { position: absolute; top: 15px; width: 100%; text-align: center; pointer-events: none; z-index: 20; }
+        .hp-w { width: 110px; height: 10px; background: #333; border: 1px solid #fff; border-radius: 5px; margin: 0 auto; overflow: hidden; }
+        #hp-f { width: 100%; height: 100%; background: #f00; transition: 0.3s; }
+
+        .j { position: absolute; bottom: 40px; width: 80px; height: 80px; background: rgba(255,255,255,0.05); border-radius: 50%; border: 2px solid; z-index: 30; }
+        #j-l { left: 20px; border-color: #00f2ff; box-shadow: 0 0 15px #00f2ff; }
+        #j-r { right: 20px; border-color: #ff00de; box-shadow: 0 0 20px #ff00de; }
+        .st { position: absolute; top: 50%; left: 50%; width: 35px; height: 35px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); opacity: 0.8; pointer-events: none; }
+
+        .bg { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: -1; opacity: 0.5; }
+        .top { position: absolute; top: 0; width: 100%; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .p-card { background: #111; padding: 6px 15px; border-radius: 5px; border: 1px solid #00f2ff; font-weight: bold; color: #00f2ff; }
+        .stats { display: flex; gap: 8px; }
+        .s-item { background: rgba(0,0,0,0.8); padding: 5px 10px; border-radius: 6px; border: 1px solid #444; font-size: 14px; }
+
+        .side-btns { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; }
+        .sq-btn { width: 65px; height: 65px; background: #111; border: 2px solid #ff00de; border-radius: 12px; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; text-align: center; box-shadow: 0 0 10px #ff00de; color: #fff; }
+
+        .skin { font-size: 70px; text-align: center; margin-top: 90px; line-height: 1.1; filter: drop-shadow(0 0 10px #00f2ff); }
+        .bottom-row { position: absolute; bottom: 35px; width: 92%; display: flex; gap: 10px; justify-content: center; }
+        .play { flex: 1.2; background: #00f2ff; color: #000; padding: 16px; border-radius: 35px; border: 2px solid #fff; font-weight: bold; font-size: 20px; text-align: center; box-shadow: 0 0 20px #00f2ff; }
+
+        .mdl { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #050505; border: 2px solid #ff00de; width: 85%; border-radius: 20px; padding: 20px; display: none; z-index: 100; overflow-y: auto; max-height: 85%; box-shadow: 0 0 30px #ff00de; }
+        .act { border: 1px solid #333; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-radius: 12px; background: #111; }
+        .btn-buy { background: #0f0; border: none; padding: 8px 12px; border-radius: 6px; color: #000; font-weight: bold; font-size: 12px; }
+        .btn-close { width: 100%; padding: 12px; border-radius: 12px; background: #ff00de; border: none; color: #fff; font-weight: bold; margin-top: 15px; }
+        .neon-t { color: #ff00de; text-shadow: 0 0 10px #ff00de; text-align: center; margin-bottom: 15px; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <div id="nick-sc" class="sc" style="display:flex">
+        <div class="n-box">
+            <h2 class="neon-t">pico engine</h2>
+            <input type="text" id="nick-in" placeholder="твой позывной">
+            <button onclick="saveNick()" style="padding:12px; background:#00f2ff; border:none; font-weight:bold; border-radius:8px; color:#000;">авторизация</button>
+        </div>
+    </div>
+
+    <div id="game-sc" class="sc">
+        <div class="hud">
+            <div class="hp-w"><div id="hp-f"></div></div>
+            <div id="ammo" style="color:#00f2ff; font-weight:bold; margin-top:5px;">3 / 3</div>
+        </div>
+        <canvas id="stage"></canvas>
+        <div id="j-l" class="j"><div id="s-l" class="st"></div></div>
+        <div id="j-r" class="j"><div id="s-r" class="st"></div></div>
+    </div>
+
+    <div id="menu-sc" class="sc">
+        <img src="https://i.ibb.co/DJsfqdJ/IMG-1949.jpg" class="bg">
+        <div class="top">
+            <div class="p-card" id="disp-nick">pico</div>
+            <div class="stats">
+                <div class="s-item">🟡 <span id="c-count">100</span></div>
+                <div class="s-item">💎 <span id="g-count">20</span></div>
+                <div class="s-item">🍿 <span id="p-count">0</span></div>
+            </div>
+        </div>
+        <div class="side-btns">
+            <div class="sq-btn" onclick="openM('shop-mdl')">маркет</div>
+            <div class="sq-btn" onclick="openM('skin-mdl')" style="border-color:#00f2ff;">скины</div>
+        </div>
+        <div class="skin" id="main-skin">😀<br>🚹<br>🦵🏾🦵🏾</div>
+        <div class="bottom-row">
+            <div class="play" onclick="goBattle()">начать бой</div>
+        </div>
+    </div>
+
+    <div id="shop-mdl" class="mdl">
+        <h3 class="neon-t">нео-маркет</h3>
+        <div class="act">
+            <span>Буст попкорна (+50🍿)</span>
+            <button class="btn-buy" id="daily-btn" onclick="claimDaily()">Взять</button>
+        </div>
+        <div class="act"><span>+100 монет (50💎)</span><button class="btn-buy" onclick="buy(100,'c',50,'g')">Купить</button></div>
+        <button class="btn-close" onclick="closeM()">Закрыть</button>
+    </div>
+
+    <div id="skin-mdl" class="mdl">
+        <h3 class="neon-t">скины</h3>
+        <div class="act"><span>классик</span><button class="btn-buy" onclick="setSkin('😀','🚹','🦵🏾🦵🏾')">set</button></div>
+        <div class="act"><span>демон</span><button class="btn-buy" onclick="setSkin('😈','🥋','🔥')" style="background:#ff00de">set</button></div>
+        <div class="act"><span>робот</span><button class="btn-buy" onclick="setSkin('🤖','🦾','⚙️')" style="background:#00f2ff">set</button></div>
+        <button class="btn-close" onclick="closeM()">закрыть</button>
+    </div>
+
+<script>
+// ЗАПРЕТ СКРОЛЛА СТРАНИЦЫ
+document.addEventListener('touchmove', function(e) {
+    if (e.target.tagName !== 'INPUT' && !e.target.closest('.mdl')) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+const canvas = document.getElementById('stage'), ctx = canvas.getContext('2d');
+let w, h, playing = 0, ammo = 3, coins = 100, gems = 20, popcorn = 0;
+let plr = {x:0, y:0, speed: 5, hp: 100, nick: "pico"};
+let bots = [], bullets = [];
+let ml = {a:0,x:0,y:0}, mr = {a:0,ang:0};
+
+function saveStats() {
+    localStorage.setItem('pico_coins', coins);
+    localStorage.setItem('pico_gems', gems);
+    localStorage.setItem('pico_popcorn', popcorn);
+    localStorage.setItem('pico_skin', document.getElementById('main-skin').innerHTML);
+    refresh();
+}
+
+function loadStats() {
+    coins = parseInt(localStorage.getItem('pico_coins')) || 100;
+    gems = parseInt(localStorage.getItem('pico_gems')) || 20;
+    popcorn = parseInt(localStorage.getItem('pico_popcorn')) || 0;
+    const s = localStorage.getItem('pico_skin');
+    if(s) document.getElementById('main-skin').innerHTML = s;
+    refresh();
+}
+
+// ЛОГИКА БУСТА 23 ЧАСА
+function claimDaily() {
+    const lastClaim = localStorage.getItem('pico_last_pop');
+    const now = Date.now();
+    const waitTime = 23 * 60 * 60 * 1000; // 23 часа в мс
+
+    if (!lastClaim || (now - lastClaim) >= waitTime) {
+        popcorn += 50;
+        localStorage.setItem('pico_last_pop', now);
+        saveStats();
+        alert("Получено +50 попкорна! Следующий через 23 часа.");
+    } else {
+        const remaining = waitTime - (now - lastClaim);
+        const hours = Math.floor(remaining / (1000 * 60 * 60));
+        const mins = Math.floor((remaining / (1000 * 60)) % 60);
+        alert(`Жди еще ${hours}ч. ${mins}м.`);
+    }
+}
+
+function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+window.onresize = resize; resize();
+
+function saveNick() {
+    const n = document.getElementById('nick-in').value || "pico";
+    localStorage.setItem('pico_nick', n);
+    document.getElementById('disp-nick').innerText = n;
+    document.getElementById('nick-sc').style.display = 'none';
+    document.getElementById('menu-sc').style.display = 'flex';
+    loadStats();
+}
+
+function showMenu() {
+    document.querySelectorAll('.sc').forEach(s => s.style.display = 'none');
+    document.getElementById('menu-sc').style.display = 'flex';
+    playing = 0;
+    saveStats();
+}
+
+function goBattle() {
+    bots = []; bullets = [];
+    for(let i = 0; i < 4; i++) {
+        bots.push({x: Math.random()*w, y: Math.random()*h, hp: 10});
+    }
+    document.querySelectorAll('.sc').forEach(s => s.style.display = 'none');
+    document.getElementById('game-sc').style.display = 'flex';
+    plr.x = w/2; plr.y = h/2; plr.hp = 100; playing = 1;
+}
+
+function loop() {
+    if(playing) {
+        ctx.fillStyle = "#050505"; ctx.fillRect(0,0,w,h);
+        if(ml.a) { plr.x += ml.x * plr.speed; plr.y += ml.y * plr.speed; }
+        plr.x = Math.max(20, Math.min(w-20, plr.x));
+        plr.y = Math.max(20, Math.min(h-20, plr.y));
+
+        bots.forEach(b => {
+            if(b.hp > 0) {
+                let angle = Math.atan2(plr.y - b.y, plr.x - b.x);
+                b.x += Math.cos(angle)*1.2; b.y += Math.sin(angle)*1.2;
+                if(Math.hypot(plr.x-b.x, plr.y-b.y) < 30) {
+                    plr.hp -= 0.5;
+                    if(plr.hp <= 0) showMenu();
+                }
+                ctx.fillStyle = "#ff00de"; ctx.beginPath(); ctx.arc(b.x, b.y, 15, 0, 7); ctx.fill();
+            }
+        });
+
+        bullets.forEach((bull, i) => {
+            bull.x += Math.cos(bull.ang)*20; bull.y += Math.sin(bull.ang)*20;
+            ctx.fillStyle = "#0f0"; ctx.beginPath(); ctx.arc(bull.x, bull.y, 5, 0, 7); ctx.fill();
+            bots.forEach(b => {
+                if(b.hp > 0 && Math.hypot(bull.x-b.x, bull.y-b.y) < 25) {
+                    b.hp = 0; bullets.splice(i, 1);
+                    coins += 5; refresh();
+                }
+            });
+            if(bull.x < 0 || bull.x > w || bull.y < 0 || bull.y > h) bullets.splice(i, 1);
+        });
+
+        ctx.fillStyle = "#00f2ff"; ctx.beginPath(); ctx.arc(plr.x, plr.y, 18, 0, 7); ctx.fill();
+        document.getElementById('hp-f').style.width = plr.hp + "%";
+        
+        if(bots.every(b => b.hp <= 0)) { 
+            playing = 0; coins += 20; popcorn += 5; 
+            saveStats(); 
+            alert("ПОБЕДА! +20🟡 +5🍿"); 
+            showMenu();
+        }
+    }
+    requestAnimationFrame(loop);
+}
+loop();
+
+function fire() {
+    if(ammo > 0) {
+        let targetAngle = mr.ang;
+        let target = bots.find(b => b.hp > 0);
+        if(target) targetAngle = Math.atan2(target.y - plr.y, target.x - plr.x);
+        bullets.push({x: plr.x, y: plr.y, ang: targetAngle});
+        ammo--; refresh();
+        if(ammo === 0) setTimeout(() => { ammo = 3; refresh(); }, 600);
+    }
+}
+
+function buy(getAm, getT, loseAm, loseT) {
+    if(gems >= loseAm) { gems -= loseAm; coins += getAm; saveStats(); }
+    else alert("не хватает алмазов!");
+}
+
+function setSkin(h, b, f) { 
+    document.getElementById('main-skin').innerHTML = `${h}<br>${b}<br>${f}`; 
+    saveStats(); closeM(); 
+}
+
+function refresh() {
+    document.getElementById('ammo').innerText = ammo + " / 3";
+    document.getElementById('c-count').innerText = coins;
+    document.getElementById('g-count').innerText = gems;
+    document.getElementById('p-count').innerText = popcorn;
+}
+
+function openM(id) { document.getElementById(id).style.display = 'block'; }
+function closeM() { document.querySelectorAll('.mdl').forEach(m => m.style.display = 'none'); }
+
+function handle(e, j, zId, sId, isShoot) {
+    const z = document.getElementById(zId).getBoundingClientRect();
+    const s = document.getElementById(sId);
+    const touches = e.touches || [e];
+    const t = Array.from(touches).find(t => t.clientX > z.left-50 && t.clientX < z.right+50);
+    if(t) {
+        j.a = 1; let dx = t.clientX - (z.left+40), dy = t.clientY - (z.top+40);
+        let d = Math.min(Math.hypot(dx,dy), 35); j.ang = Math.atan2(dy, dx);
+        if(!isShoot) { j.x = Math.cos(j.ang)*(d/35); j.y = Math.sin(j.ang)*(d/35); }
+        s.style.transform = `translate(calc(-50% + ${Math.cos(j.ang)*d}px), calc(-50% + ${Math.sin(j.ang)*d}px))`;
+    }
+}
+
+window.addEventListener('touchstart', e => { 
+    handle(e,ml,'j-l','s-l',false); 
+    handle(e,mr,'j-r','s-r',true); 
+    let rightTouch = Array.from(e.touches).find(t => t.clientX > window.innerWidth/2);
+    if(rightTouch) fire();
+});
+window.addEventListener('touchmove', e => { handle(e,ml,'j-l','s-l',false); handle(e,mr,'j-r','s-r',true); }, {passive:false});
+window.addEventListener('touchend', e => {
+    if(e.touches.length === 0) { ml.a = 0; document.getElementById('s-l').style.transform = 'translate(-50%,-50%)'; }
+    document.getElementById('s-r').style.transform = 'translate(-50%,-50%)';
+});
+
+const sn = localStorage.getItem('pico_nick');
+if(sn) {
+    document.getElementById('disp-nick').innerText = sn;
+    document.getElementById('nick-sc').style.display = 'none';
+    document.getElementById('menu-sc').style.display = 'flex';
+    loadStats();
+}
+</script>
+</body>
+</html>
