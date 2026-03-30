@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pico Pro Engine</title>
+    
+    <link rel="apple-touch-icon" href="https://i.ibb.co/v4F0RRKS/IMG-4539.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; }
+        .sc { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        
+        /* Вход */
+        #nick-sc { display: flex; background: #000; }
+        .n-box { background: #111; padding: 25px; border-radius: 20px; border: 2px solid #0055ff; width: 85%; max-width: 300px; display: flex; flex-direction: column; gap: 20px; } /* Большой интервал */
+        input { padding: 15px; border-radius: 10px; border: none; font-size: 18px; text-align: center; background: #222; color: #fff; width: 100%; }
+        .btn { padding: 16px; background: #0f0; border: none; border-radius: 12px; font-weight: bold; color: #000; cursor: pointer; }
+        
+        /* Меню */
+        #menu-sc { background: #000; }
+        .bg { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: -1; opacity: 0.5; }
+        .top-bar { position: absolute; top: 10px; width: 95%; display: flex; justify-content: space-between; }
+        .stat { background: rgba(30,30,30,0.9); padding: 6px 12px; border-radius: 8px; border: 1px solid #444; font-size: 13px; }
+        .skin-container { margin-top: 30px; display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+        .skin-part { font-size: 45px; display: block; height: 50px; }
+        .play-btn { position: absolute; bottom: 35px; width: 85%; background: #ffea00; color: #000; padding: 18px; border-radius: 40px; border: 4px solid #fff; font-weight: bold; font-size: 24px; text-align: center; }
+        
+        /* Магазин с большими интервалами */
+        .mdl { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 2px solid #0055ff; width: 92%; height: 85%; border-radius: 25px; padding: 20px; display: none; z-index: 100; overflow-y: auto; }
+        .m-section { margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 15px; } /* Увеличила отступ секций */
+        .m-section h3 { color: gold; font-size: 18px; margin: 10px 0; text-transform: uppercase; }
+        .item { background: #1a1a1a; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border: 1px solid #333; } /* Увеличила отступы товаров */
+        .buy-b { background: #0f0; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; }
+        .blue-btn { display: block; width: 100%; background: #0055ff; color: #fff; text-align: center; padding: 15px; border-radius: 12px; text-decoration: none; font-weight: bold; margin-top: 20px; border: none; font-size: 16px; }
+        
+        /* Игра */
+        #game-sc { background: #151515; }
+        canvas { display: block; width: 100%; height: 100%; }
+        .j { position: absolute; bottom: 60px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid; }
+        #j-l { left: 40px; border-color: #0055ff; }
+        #j-r { right: 40px; border-color: #f00; }
+        .st { position: absolute; top: 50%; left: 50%; width: 45px; height: 45px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <div id="nick-sc" class="sc">
+        <div class="n-box">
+            <h2 style="text-align:center; margin:0">pico id</h2>
+            <input type="text" id="nick-in" placeholder="Никнейм" maxlength="12">
+            <button class="btn" onclick="saveNick()">ВХОД</button>
+        </div>
+    </div>
+
+    <div id="menu-sc" class="sc">
+        <img src="https://i.ibb.co/DJsfqdJ/IMG-1949.jpg" class="bg">
+        <div class="top-bar">
+            <div class="stat" id="disp-nick">pico</div>
+            <div style="display:flex; gap:10px">
+                <div class="stat">🟡 <span id="c-count">100</span></div>
+                <div class="stat">💎 <span id="g-count">20</span></div>
+            </div>
+        </div>
+        <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%);">
+            <div style="width: 75px; height: 75px; background: #222; border: 2px solid #0055ff; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; color: gold; text-align: center; cursor: pointer;" onclick="openM('shop-mdl')">МАГАЗИН</div>
+        </div>
+        <div class="skin-container">
+            <span class="skin-part">😀</span><span class="skin-part">🚹</span><span class="skin-part">🦵🏾🦵🏾</span>
+        </div>
+        <div class="play-btn" onclick="startBattle()">ИГРАТЬ</div>
+    </div>
+
+    <div id="shop-mdl" class="mdl">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <h2 style="color:#0055ff; margin:0">PICO SHOP</h2>
+            <button onclick="closeM()" style="background:#f33; border:none; color:#fff; padding:8px 18px; border-radius:10px; font-weight: bold;">X</button>
+        </div>
+        
+        <div class="m-section">
+            <h3>🔥 Акции</h3>
+            <div class="item"><span>Набор Бойца (200💎)</span><button class="buy-b" onclick="buy(0,200)">0 🟡</button></div>
+        </div>
+        
+        <div class="m-section">
+            <h3>🏷️ Товары</h3>
+            <div class="item"><span>Скин</span><button class="buy-b" onclick="buy(500,0)">500 🟡</button></div>
+        </div>
+        
+        <div class="m-section">
+            <h3>📦 Продукты</h3>
+            <div class="item"><span>Хиллка</span><button class="buy-b" onclick="buy(100,0)">100 🟡</button></div>
+        </div>
+        
+        <div class="m-section" style="border: none;">
+            <h3>🎫 Промокод</h3>
+            <input type="text" id="promo-in" placeholder="Введи код" style="margin-bottom: 15px;">
+            <button class="btn" style="width:100%;" onclick="usePromo()">АКТИВИРОВАТЬ</button>
+            <a href="https://t.me/+FYqVAyAicHUwNTJi" class="blue-btn">ПОЛУЧИТЬ ПРОМОКОД</a>
+        </div>
+    </div>
+
+    <div id="game-sc" class="sc">
+        <canvas id="stage"></canvas>
+        <div id="j-l" class="j"><div id="s-l" class="st"></div></div>
+        <div id="j-r" class="j"><div id="s-r" class="st"></div></div>
+    </div>
+
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyAqVnAGWpLJKWYoyMoqdyVg22Ks4U2Bq-0",
+    projectId: "pico-server-pro",
+    databaseURL: "https://pico-server-pro-default-rtdb.firebaseio.com",
+    appId: "1:1066461989698:ios:58db1a5166b9c6dd9416db"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let coins = 100, gems = 20, myNick = "pico", playing = false;
+
+function saveNick() {
+    const val = document.getElementById('nick-in').value.trim();
+    if(!val) return;
+    myNick = val;
+    localStorage.setItem('pico_nick', val);
+    db.ref('users/' + val).update({ online: true });
+    showMenu();
+}
+
+function showMenu() {
+    document.getElementById('disp-nick').innerText = myNick;
+    document.getElementById('nick-sc').style.display = 'none';
+    document.getElementById('menu-sc').style.display = 'flex';
+}
+
+function startBattle() {
+    document.getElementById('menu-sc').style.display = 'none';
+    document.getElementById('game-sc').style.display = 'flex';
+    playing = true;
+}
+
+function usePromo() {
+    const code = document.getElementById('promo-in').value.toUpperCase();
+    const deadline = new Date('2026-04-16');
+    if(new Date() > deadline) return alert("Истек!");
+    if(code === 'PICO2026') {
+        coins += 50; updateStats(); alert("+50 монет!");
+    }
+}
+
+function updateStats() {
+    document.getElementById('c-count').innerText = coins;
+    document.getElementById('g-count').innerText = gems;
+}
+
+function openM(id) { document.getElementById(id).style.display = 'block'; }
+function closeM() { document.querySelectorAll('.mdl').forEach(m => m.style.display = 'none'); }
+function buy(c, g) { if(coins >= c) { coins -= c; gems += g; updateStats(); } }
+
+window.onload = () => { if(localStorage.getItem('pico_nick')) { myNick = localStorage.getItem('pico_nick'); showMenu(); } };
+</script>
+</body>
+</html>
