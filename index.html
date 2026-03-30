@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>pico pro engine</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; }
+        .sc { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; z-index: 10; }
+        #nick-sc { display: flex; background: #000; justify-content: center; align-items: center; }
+        #match-sc { background: linear-gradient(180deg, #ff71ad 0%, #a430ff 50%, #4a00e0 100%); justify-content: center; text-align: center; }
+        #game-sc { background: #151515; }
+        #menu-sc { background: #000; }
+        .n-box { background: #111; padding: 30px; border-radius: 15px; border: 2px solid #0055ff; display: flex; flex-direction: column; gap: 15px; }
+        input { padding: 12px; border-radius: 8px; border: none; font-size: 18px; text-align: center; background: #222; color: #fff; }
+        .m-sun { width: 250px; height: 250px; background: #ffea00; border-radius: 50%; position: absolute; top: 20%; z-index: -1; filter: blur(10px); }
+        .m-title { font-size: 28px; font-weight: bold; margin-bottom: 20px; }
+        .m-count { font-size: 36px; font-weight: bold; }
+        canvas { display: block; width: 100%; height: 100%; }
+        .hud { position: absolute; top: 15px; width: 100%; text-align: center; pointer-events: none; z-index: 20; }
+        .hp-w { width: 110px; height: 10px; background: #333; border: 1px solid #fff; border-radius: 5px; margin: 0 auto; overflow: hidden; }
+        #hp-f { width: 100%; height: 100%; background: #0f0; transition: width 0.3s; }
+        #ammo-bar { color: #fff; font-weight: bold; margin-top: 5px; font-size: 14px; text-shadow: 1px 1px 2px #000; }
+        .j { position: absolute; bottom: 40px; width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid; z-index: 30; }
+        #j-l { left: 20px; border-color: #0055ff; }
+        #j-r { right: 20px; border-color: #f00; }
+        .st { position: absolute; top: 50%; left: 50%; width: 35px; height: 35px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); opacity: 0.8; }
+        .bg { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: -1; opacity: 0.7; }
+        .top { position: absolute; top: 0; width: 100%; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .p-card { background: #333; padding: 6px 15px; border-radius: 5px; border: 1px solid #555; }
+        .stats { display: flex; gap: 8px; }
+        .s-item { background: rgba(0,0,0,0.8); padding: 5px 10px; border-radius: 6px; font-size: 14px; }
+        .side-btns { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; }
+        .sq-btn { width: 65px; height: 65px; background: #333; border: 2px solid #555; border-radius: 12px; font-size: 10px; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .skin { font-size: 70px; text-align: center; margin-top: 90px; }
+        .bottom-row { position: absolute; bottom: 15px; width: 92%; display: flex; gap: 10px; }
+        .play { flex: 1; background: #ffea00; color: #000; padding: 16px; border-radius: 35px; border: 3px solid #fff; font-weight: bold; font-size: 20px; text-align: center; }
+        .mdl { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 3px solid #0055ff; width: 90%; height: 80%; border-radius: 25px; padding: 15px; display: none; z-index: 100; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+    <div id="nick-sc" class="sc" style="display:flex">
+        <div class="n-box">
+            <h2 style="text-align:center">pico id</h2>
+            <input type="text" id="nick-in" placeholder="ник" maxlength="12">
+            <button onclick="saveNick()" style="padding:12px; background:#0f0; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">вход</button>
+        </div>
+    </div>
+
+    <div id="match-sc" class="sc">
+        <div class="m-sun"></div>
+        <div class="m-title">подбор игроков...</div>
+        <div class="m-count"><span id="p-found">0</span> / 10</div>
+        <button onclick="stopMatching()" style="margin-top:20px; padding:10px; background:rgba(0,0,0,0.5); color:#fff; border:1px solid #fff; border-radius:10px;">отмена</button>
+    </div>
+
+    <div id="game-sc" class="sc">
+        <div class="hud">
+            <div class="hp-w"><div id="hp-f"></div></div>
+            <div id="ammo-bar">SHOTS: 3/3</div>
+        </div>
+        <canvas id="stage"></canvas>
+        <div id="j-l" class="j"><div id="s-l" class="st"></div></div>
+        <div id="j-r" class="j"><div id="s-r" class="st"></div></div>
+    </div>
+
+    <div id="menu-sc" class="sc">
+        <img src="https://i.ibb.co/DJsfqdJ/IMG-1949.jpg" class="bg">
+        <div class="top">
+            <div class="p-card" id="disp-nick">pico</div>
+            <div class="stats">
+                <div class="s-item">🟡 <span id="c-count">100</span></div>
+                <div class="s-item">💎 <span id="g-count">20</span></div>
+            </div>
+        </div>
+        <div class="side-btns"><div class="sq-btn" onclick="openShop()">магазин</div></div>
+        <div class="skin">😀<br>🚹<br>🦵🏾🦵🏾</div>
+        <div class="bottom-row">
+            <div class="play" onclick="startMatching()">ИГРАТЬ</div>
+        </div>
+    </div>
+
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+<script>
+[span_0](start_span)// Настройки из твоего файла[span_0](end_span)
+const firebaseConfig = {
+    apiKey: "AIzaSyAqVnAGWpLJKWYoyMoqdyVg22Ks4U2Bq-0",
+    projectId: "pico-server-pro",
+    databaseURL: "https://pico-server-pro-default-rtdb.firebaseio.com",
+    appId: "1:1066461989698:ios:58db1a5166b9c6dd9416db"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const canvas = document.getElementById('stage'), ctx = canvas.getContext('2d');
+let w, h, playing = 0, ammo = 3, lastReload = Date.now();
+let plr = {x:0, y:0, speed: 4, hp: 100, nick: "pico", r: 18};
+let players = [], bullets = [], walls = [], ml = {a:0,x:0,y:0}, mr = {a:0,ang:0};
+
+function saveNick() {
+    const name = document.getElementById('nick-in').value.trim() || "pico_" + Math.floor(Math.random()*99);
+    plr.nick = name;
+    localStorage.setItem('pico_nick', name);
+    document.getElementById('disp-nick').innerText = name;
+    document.getElementById('nick-sc').style.display = 'none';
+    document.getElementById('menu-sc').style.display = 'flex';
+}
+
+function startMatching() {
+    document.getElementById('menu-sc').style.display = 'none';
+    document.getElementById('match-sc').style.display = 'flex';
+    const qRef = db.ref('matchmaking/queue/' + plr.nick);
+    qRef.set({ n: plr.nick, t: Date.now() });
+
+    db.ref('matchmaking/queue').on('value', (s) => {
+        const data = s.val() || {};
+        const keys = Object.keys(data);
+        document.getElementById('p-found').innerText = keys.length;
+        if (keys.length >= 10) { // ИСПРАВЛЕНО: Теперь ждем 10 игроков
+            db.ref('matchmaking/queue').off();
+            setTimeout(() => { qRef.remove(); goBattle(data); }, 1000);
+        }
+    });
+}
+
+function goBattle(data) {
+    playing = 1;
+    document.querySelectorAll('.sc').forEach(s => s.style.display = 'none');
+    document.getElementById('game-sc').style.display = 'flex';
+    resize();
+    plr.x = w/2; plr.y = h/2;
+    
+    // Генерация карты (стены)
+    walls = [
+        {x: w*0.2, y: h*0.2, w: 100, h: 20},
+        {x: w*0.7, y: h*0.3, w: 20, h: 150},
+        {x: w*0.4, y: h*0.7, w: 150, h: 20}
+    ];
+
+    const names = Object.keys(data);
+    players = names.map(n => ({
+        x: Math.random()*w, y: Math.random()*h, hp: 100, nick: n, r: 18
+    }));
+}
+
+function loop() {
+    if(playing) {
+        ctx.fillStyle = "#151515"; ctx.fillRect(0,0,w,h);
+        
+        // Перезарядка: +1 пуля каждые 2 секунды
+        if (ammo < 3 && Date.now() - lastReload > 2000) {
+            ammo++;
+            lastReload = Date.now();
+            document.getElementById('ammo-bar').innerText = `SHOTS: ${ammo}/3`;
+        }
+
+        // Отрисовка стен
+        ctx.fillStyle = "#444";
+        walls.forEach(wall => ctx.fillRect(wall.x, wall.y, wall.w, wall.h));
+
+        // Движение игрока
+        if(ml.a) {
+            let nx = plr.x + ml.x * plr.speed;
+            let ny = plr.y + ml.y * plr.speed;
+            
+            // Проверка столкновений со стенами
+            let hit = walls.some(wall => nx+plr.r > wall.x && nx-plr.r < wall.x+wall.w && ny+plr.r > wall.y && ny-plr.r < wall.y+wall.h);
+            if(!hit) { plr.x = nx; plr.y = ny; }
+        }
+
+        // Пули
+        bullets.forEach((b, i) => {
+            b.x += Math.cos(b.a)*8; b.y += Math.sin(b.a)*8;
+            ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, 7); ctx.fill();
+            
+            // Попадание в стены
+            if(walls.some(w => b.x > w.x && b.x < w.x+w.w && b.y > w.y && b.y < w.y+w.h)) bullets.splice(i, 1);
+            if(b.x<0 || b.x>w || b.y<0 || b.y>h) bullets.splice(i, 1);
+        });
+
+        // Игроки
+        players.forEach(p => {
+            if(p.hp > 0) {
+                ctx.fillStyle = p.nick === plr.nick ? "#3f3" : "#f33";
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill();
+                ctx.fillStyle = "#fff"; ctx.font = "12px Arial";
+                ctx.fillText(p.nick, p.x, p.y - 25);
+            }
+        });
+    }
+    requestAnimationFrame(loop);
+}
+
+function fire() {
+    if(ammo > 0) {
+        bullets.push({x: plr.x, y: plr.y, a: mr.ang});
+        ammo--;
+        lastReload = Date.now(); // Сброс таймера перезарядки при выстреле
+        document.getElementById('ammo-bar').innerText = `SHOTS: ${ammo}/3`;
+    }
+}
+
+// Остальные функции (handle, resize, stopMatching) остаются такими же для работы джойстиков
+function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+window.onresize = resize; resize();
+loop();
+
+function handle(e, j, zId, sId, shoot) {
+    const z = document.getElementById(zId).getBoundingClientRect();
+    const s = document.getElementById(sId);
+    const touches = e.touches || [];
+    const t = Array.from(touches).find(t => t.clientX > z.left-20 && t.clientX < z.right+20);
+    if(t) {
+        j.a = 1; let dx = t.clientX - (z.left+40), dy = t.clientY - (z.top+40);
+        let d = Math.min(Math.hypot(dx,dy), 35); j.ang = Math.atan2(dy, dx);
+        if(!shoot) { j.x = Math.cos(j.ang)*(d/35); j.y = Math.sin(j.ang)*(d/35); }
+        s.style.transform = `translate(calc(-50% + ${Math.cos(j.ang)*d}px), calc(-50% + ${Math.sin(j.ang)*d}px))`;
+    }
+}
+window.addEventListener('touchstart', e => { handle(e,ml,'j-l','s-l',0); handle(e,mr,'j-r','s-r',1); });
+window.addEventListener('touchmove', e => { handle(e,ml,'j-l','s-l',0); handle(e,mr,'j-r','s-r',1); });
+window.addEventListener('touchend', e => { if(e.touches.length === 0) { if(mr.a) fire(); ml.a = 0; mr.a = 0; } });
+</script>
+</body>
+</html>
