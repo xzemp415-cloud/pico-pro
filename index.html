@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){
+            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=108317402', 'ym');
+
+        ym(108317402, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/108317402" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PICO ENGINE PRO + METRIKA</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="Https://i.ibb.co/b58HzPrr/IMG-4539.jpg">
+
+    <style>
+        :root { --neon: #ff00de; --cyan: #00f2ff; --red: #ff0000; --gold: #ffd700; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            touch-action: none; 
+            outline: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; font-family: 'Consolas', monospace; }
+        
+        .top-bar { position: fixed; top: 0; left: 0; width: 100%; padding: env(safe-area-inset-top, 20px) 15px 10px; background: rgba(0,0,0,0.9); border-bottom: 2px solid var(--cyan); z-index: 100; display: none; }
+        .xp-bg { width: 100%; height: 6px; background: #222; border-radius: 3px; margin-top: 5px; overflow: hidden; }
+        #xp-fill { height: 100%; width: 0%; background: var(--cyan); transition: 0.3s; }
+
+        .sc { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        .bg-img { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: -1; opacity: 0.3; }
+
+        .left-side { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 20; }
+        .btn-sq { width: 85px; height: 85px; background: #111; border: 2px solid var(--cyan); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; text-align: center; color: #fff; }
+        .btn-sq.daily { border-color: var(--gold); color: var(--gold); }
+
+        .btn-play { position: absolute; bottom: 50px; width: 80%; background: var(--cyan); color: #000; padding: 20px; border-radius: 40px; font-size: 26px; font-weight: 900; border: none; }
+
+        .joy { position: absolute; bottom: 60px; width: 140px; height: 140px; border-radius: 50%; display: none; z-index: 500; }
+        .joy-move { left: 40px; border: 3px solid var(--cyan); background: rgba(0,242,255,0.05); }
+        .joy-shoot { right: 40px; border: 3px solid var(--red); background: rgba(255,0,0,0.05); }
+        .knob { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid #fff; }
+        .joy-move .knob { background: var(--cyan); }
+        .joy-shoot .knob { background: var(--red); }
+
+        .game-hud { position: absolute; top: 120px; left: 20px; z-index: 60; display: none; }
+        .hp-bar { width: 150px; height: 10px; background: #333; border: 1px solid #fff; border-radius: 5px; overflow: hidden; margin-top: 5px; }
+        #hp-fill { height: 100%; width: 100%; background: #0f0; transition: 0.2s; }
+
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0a0a0a; border: 2px solid var(--neon); width: 90%; border-radius: 20px; padding: 20px; display: none; z-index: 1000; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #222; }
+        .buy-act { background: #0f0; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
+        .locked { filter: grayscale(1); opacity: 0.4; pointer-events: none; }
+
+        canvas { display: block; width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+
+    <div id="ui-bar" class="top-bar">
+        <div style="display:flex; justify-content: space-between; width: 100%;">
+            <div>LVL <span id="lvl-val">1</span></div>
+            <div>🟡<span id="c-count">0</span> 💎<span id="g-count">0</span> 🍿<span id="p-count">0</span></div>
+        </div>
+        <div class="xp-bg"><div id="xp-fill"></div></div>
+    </div>
+
+    <div id="sc-login" class="sc" style="display:flex;">
+        <img src="https://i.ibb.co/DJsfqdJ/IMG-1949.jpg" class="bg-img">
+        <h1 style="color:var(--cyan)">PICO ENGINE PRO</h1>
+        <input type="text" id="nick-input" placeholder="НИКНЕЙМ" style="padding:18px; border-radius:15px; width:80%; text-align:center; font-size:18px; border:none;">
+        <button class="btn-play" style="position:static; margin-top:20px;" onclick="svLogin()">ВОЙТИ</button>
+    </div>
+
+    <div id="sc-menu" class="sc">
+        <img src="https://i.ibb.co/DJsfqdJ/IMG-1949.jpg" class="bg-img">
+        <div class="left-side">
+            <div class="btn-sq daily" onclick="claimDaily()">
+                <span>ПОДАРОК</span>
+                <small id="timer-text" style="font-size:8px; margin-top:5px;">23:00:00</small>
+            </div>
+            <div class="btn-sq" onclick="openM('m-shop')">МАРКЕТ</div>
+            <div class="btn-sq" onclick="openM('m-skins')">СКИНЫ</div>
+        </div>
+        <div id="char-view" style="font-size:100px; text-align:center;">😀<br>🚹</div>
+        <button class="btn-play" onclick="startArena()">В БОЙ</button>
+    </div>
+
+    <div id="sc-game" class="sc">
+        <div class="game-hud" id="game-hud">
+            HP: <span id="hp-val">100</span>
+            <div class="hp-bar"><div id="hp-fill"></div></div>
+        </div>
+        <canvas id="stage"></canvas>
+        <div id="joy-m" class="joy joy-move"><div class="knob"></div></div>
+        <div id="joy-s" class="joy joy-shoot"><div class="knob"></div></div>
+    </div>
+
+    <div id="m-shop" class="modal">
+        <h2 style="text-align:center; color: var(--gold);">SHOP</h2>
+        <div class="row"><span>Кейс (100💎)</span><button class="buy-act" onclick="openCase()">OPEN</button></div>
+        <div class="row"><span>Дракон (2000🟡)</span><button class="buy-act" id="btn-pet" onclick="buyPet()">BUY</button></div>
+        <button onclick="closeM()" style="width:100%; padding:15px; margin-top:10px;">CLOSE</button>
+    </div>
+
+    <div id="m-skins" class="modal">
+        <h2 style="text-align:center;">FREE SKINS</h2>
+        <div class="row"><span>Classic</span><button class="buy-act" onclick="setS('😀','🚹')">SET</button></div>
+        <div class="row" id="row-robot"><span>Robot</span><button class="buy-act" onclick="setS('🤖','🦾')">SET</button></div>
+        <div class="row" id="row-demon"><span>Demon</span><button class="buy-act" onclick="setS('😈','🥋')">SET</button></div>
+        <button onclick="closeM()" style="width:100%; padding:15px; margin-top:10px;">CLOSE</button>
+    </div>
+
+<script>
+let coins=0, gems=0, popcorn=0, level=1, xp=0, nick="", owned=['classic','robot','demon'], hasPet=true;
+let hp=100, playing=false, bullets=[], eBullets=[], bots=[];
+const canvas=document.getElementById('stage'), ctx=canvas.getContext('2d');
+let w, h, plr={x:0,y:0};
+let jM={active:false, x:0, y:0, cx:0, cy:0}, jS={active:false, x:0, y:0, cx:0, cy:0};
+
+function svLogin() {
+    nick=document.getElementById('nick-input').value.trim();
+    if(!nick) return;
+    let saved = JSON.parse(localStorage.getItem('sv_pro_'+nick));
+    if(saved) {
+        coins=saved.coins; gems=saved.gems; popcorn=saved.popcorn; level=saved.level; xp=saved.xp; 
+        owned=['classic','robot','demon']; hasPet=true;
+    } else {
+        if(nick==="Developer") { coins=9999; gems=999; popcorn=100; }
+        else { coins=0; gems=0; popcorn=0; }
+        owned=['classic','robot','demon']; hasPet=true;
+    }
+    svSave();
+    document.getElementById('sc-login').style.display='none';
+    document.getElementById('sc-menu').style.display='flex';
+    document.getElementById('ui-bar').style.display='flex';
+    applyLock(); updateUI();
+}
+
+function svSave() { localStorage.setItem('sv_pro_'+nick, JSON.stringify({coins,gems,popcorn,level,xp,owned,hasPet})); }
+
+function updateUI() {
+    document.getElementById('c-count').innerText=coins; document.getElementById('g-count').innerText=gems;
+    document.getElementById('p-count').innerText=popcorn; document.getElementById('lvl-val').innerText=level;
+    document.getElementById('xp-fill').style.width=(xp%100)+"%";
+    document.getElementById('hp-val').innerText=hp; document.getElementById('hp-fill').style.width=hp+"%";
+}
+
+function applyLock() {
+    document.querySelectorAll('.locked').forEach(el=>el.classList.remove('locked'));
+    document.getElementById('btn-pet').classList.remove('locked');
+}
+
+function bindJoy(id, obj) {
+    const el = document.getElementById(id);
+    const knob = el.querySelector('.knob');
+    el.addEventListener('touchstart', e => { obj.active=true; let r=el.getBoundingClientRect(); obj.x=r.left+r.width/2; obj.y=r.top+r.height/2; });
+    window.addEventListener('touchmove', e => {
+        if(!obj.active) return;
+        let t = Array.from(e.touches).find(touch => Math.hypot(touch.clientX-obj.x, touch.clientY-obj.y) < 150);
+        if(!t) return;
+        let dx=t.clientX-obj.x, dy=t.clientY-obj.y;
+        let dist=Math.min(Math.hypot(dx,dy), 60);
+        let ang=Math.atan2(dy,dx);
+        obj.cx=Math.cos(ang)*(dist/60); obj.cy=Math.sin(ang)*(dist/60);
+        knob.style.transform=`translate(calc(-50% + ${Math.cos(ang)*dist}px), calc(-50% + ${Math.sin(ang)*dist}px))`;
+    });
+    window.addEventListener('touchend', () => { obj.active=false; obj.cx=0; obj.cy=0; knob.style.transform='translate(-50%,-50%)'; });
+}
+bindJoy('joy-m', jM); bindJoy('joy-s', jS);
+
+function startArena() {
+    w=canvas.width=window.innerWidth; h=canvas.height=window.innerHeight;
+    document.getElementById('sc-menu').style.display='none';
+    document.getElementById('sc-game').style.display='flex';
+    document.getElementById('joy-m').style.display='block';
+    document.getElementById('joy-s').style.display='block';
+    document.getElementById('game-hud').style.display='block';
+    plr={x:w/2, y:h/2}; hp=100; bots=[]; bullets=[]; eBullets=[];
+    for(let i=0; i<3; i++) bots.push({x:Math.random()*w, y:Math.random()*h, hp:1, ls:Date.now()});
+    playing=true; updateUI();
+}
+
+function loop() {
+    if(playing) {
+        ctx.fillStyle="#000"; ctx.fillRect(0,0,w,h);
+        plr.x+=jM.cx*6; plr.y+=jM.cy*6;
+        ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(plr.x,plr.y,20,0,7); ctx.fill();
+        if(jS.active && Math.random()<0.3) {
+            let a=Math.atan2(jS.cy, jS.cx);
+            bullets.push({x:plr.x, y:plr.y, vx:Math.cos(a)*15, vy:Math.sin(a)*15});
+        }
+        bullets.forEach((b,i)=>{
+            b.x+=b.vx; b.y+=b.vy; ctx.fillStyle="cyan"; ctx.fillRect(b.x,b.y,6,6);
+            bots.forEach(bot=>{ if(bot.hp>0 && Math.hypot(b.x-bot.x, b.y-bot.y)<30){bot.hp=0; bullets.splice(i,1);} });
+        });
+        bots.forEach(b=>{
+            if(b.hp>0){
+                ctx.fillStyle="magenta"; ctx.beginPath(); ctx.arc(b.x,b.y,20,0,7); ctx.fill();
+                let a=Math.atan2(plr.y-b.y, plr.x-b.x);
+                if(Date.now()-b.ls > 4000){ eBullets.push({x:b.x, y:b.y, vx:Math.cos(a)*6, vy:Math.sin(a)*6}); b.ls=Date.now(); }
+            }
+        });
+        eBullets.forEach((eb,i)=>{
+            eb.x+=eb.vx; eb.y+=eb.vy; ctx.fillStyle="red"; ctx.beginPath(); ctx.arc(eb.x,eb.y,8,0,7); ctx.fill();
+            if(Math.hypot(eb.x-plr.x, eb.y-plr.y)<22){ hp-=20; eBullets.splice(i,1); updateUI(); if(hp<=0) quitGame(false); }
+        });
+        if(bots.length>0 && bots.every(b=>b.hp<=0)) quitGame(true);
+    }
+    requestAnimationFrame(loop);
+}
+
+function quitGame(win) {
+    playing=false;
+    if(win) { coins+=30; gems+=5; popcorn+=10; xp+=40; if(xp>=100){level++; xp=0;} alert("ПОБЕДА! +30🟡 +5💎 +10🍿"); }
+    else { alert("ПОРАЖЕНИЕ!"); }
+    svSave();
+    document.getElementById('sc-game').style.display='none';
+    document.getElementById('joy-m').style.display='none';
+    document.getElementById('joy-s').style.display='none';
+    document.getElementById('game-hud').style.display='none';
+    document.getElementById('sc-menu').style.display='flex';
+    updateUI();
+}
+
+function claimDaily() {
+    let last = localStorage.getItem('sv_daily_'+nick);
+    if(!last || Date.now() - last > 23*60*60*1000) {
+        popcorn+=50; localStorage.setItem('sv_daily_'+nick, Date.now()); svSave(); updateUI(); alert("+50🍿!");
+    } else alert("Не готово!");
+}
+
+setInterval(() => {
+    let last = localStorage.getItem('sv_daily_'+nick);
+    if(!last) { document.getElementById('timer-text').innerText="ГОТОВО"; return; }
+    let diff = (23*60*60*1000) - (Date.now()-last);
+    if(diff<=0) document.getElementById('timer-text').innerText="ГОТОВО";
+    else { let h=Math.floor(diff/3600000), m=Math.floor((diff%3600000)/60000), s=Math.floor((diff%60000)/1000); document.getElementById('timer-text').innerText=`${h}:${m<10?'0':''}${m}:${s<10?'0':''}${s}`; }
+}, 1000);
+
+function openM(id){document.getElementById(id).style.display='block';}
+function closeM(){document.querySelectorAll('.modal').forEach(m=>m.style.display='none');}
+function setS(h,b){document.getElementById('char-view').innerHTML=h+"<br>"+b; closeM();}
+function openCase(){if(gems>=100){gems-=100; coins+=500; svSave(); updateUI();}}
+function buyPet(){hasPet=true; svSave(); updateUI(); alert("OK");}
+
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+    if (e.ctrlKey && (e.key === 'c' || e.key === 'u' || e.key === 's' || e.key === 'a')) e.preventDefault();
+    if (e.key === 'F12') e.preventDefault();
+});
+
+loop();
+</script>
+</body>
+</html>
